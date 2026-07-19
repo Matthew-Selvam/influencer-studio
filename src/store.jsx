@@ -118,6 +118,14 @@ function useInfluencerStore(initial) {
 const InfluencersCtx = createContext(null)
 const InspirationCtx = createContext(null)
 const BrandDealsCtx  = createContext(null)
+// True once the /seeds.json reconciliation (success OR failure) has completed at least once.
+// Pages that show "No X yet" for inspiration_boards / brand_deals must gate that empty state on
+// this flag — those two lists are seeded asynchronously after mount, so the localStorage-backed
+// state is legitimately `[]` for a brief window even when real seed data is about to arrive.
+// Rendering "No X yet" during that window is a false negative: it reads as a bug (and looks
+// exactly like one — "shows 0, comes back on refresh") because nothing distinguishes "checked,
+// truly empty" from "haven't checked yet".
+const SeedsReadyCtx  = createContext(false)
 
 const KAYLA_SEED = {
   id: 'kayla-template',
@@ -434,6 +442,7 @@ export function StoreProvider({ children }) {
   const brandDealsState  = useLocalStorage('brand_deals', [])
   const [, setInspirationBoards] = inspirationState
   const [, setDealsData]         = brandDealsState
+  const [seedsReady, setSeedsReady] = useState(false)
 
   // Seed from /seeds.json when seed IDs are missing from localStorage
   useEffect(() => {
@@ -516,13 +525,16 @@ export function StoreProvider({ children }) {
         if (didWrite) window.location.reload()
       })
       .catch(e => console.warn('[seeds] failed to load:', e))
+      .finally(() => setSeedsReady(true))
   }, []) // eslint-disable-line
 
   return (
     <InfluencersCtx.Provider value={influencerStore}>
       <InspirationCtx.Provider value={inspirationState}>
         <BrandDealsCtx.Provider value={brandDealsState}>
-          {children}
+          <SeedsReadyCtx.Provider value={seedsReady}>
+            {children}
+          </SeedsReadyCtx.Provider>
         </BrandDealsCtx.Provider>
       </InspirationCtx.Provider>
     </InfluencersCtx.Provider>
@@ -532,6 +544,9 @@ export function StoreProvider({ children }) {
 export function useInfluencers()       { return useContext(InfluencersCtx) }
 export function useInspirationBoards() { return useContext(InspirationCtx) }
 export function useBrandDeals()        { return useContext(BrandDealsCtx) }
+/** True once the initial /seeds.json reconciliation has completed (success or failure). Gate any
+ *  "no items yet" empty state on this — before it's true, an empty list may just be unchecked. */
+export function useSeedsReady()        { return useContext(SeedsReadyCtx) }
 
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2)

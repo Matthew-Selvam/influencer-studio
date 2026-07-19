@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useBrandDeals, generateId } from '../store'
+import { useBrandDeals, useSeedsReady, generateId } from '../store'
 import { compressImage, downloadImage } from '../utils/imageUtils'
 import { generateSingleImage } from '../utils/higgsfieldGenerate'
 import { isHFConnected } from '../utils/higgsfieldAuth'
@@ -290,6 +290,7 @@ function DealCard({ deal, generating, progress, onDelete, onOpen, onRename, onGe
 
 export default function BrandDeals() {
   const [deals, setDeals] = useBrandDeals()
+  const seedsReady = useSeedsReady()
   const [showNew, setShowNew] = useState(false)
   const [lightboxDeal, setLightboxDeal] = useState(null)
   const [generating, setGenerating] = useState({})   // { [id]: bool }
@@ -377,7 +378,9 @@ export default function BrandDeals() {
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.6px' }}>Brand Deals</h1>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>
-              {deals.length} deal{deals.length !== 1 ? 's' : ''}
+              {!seedsReady && deals.length === 0
+                ? 'Loading…'
+                : `${deals.length} deal${deals.length !== 1 ? 's' : ''}`}
             </p>
           </div>
           <button
@@ -391,7 +394,15 @@ export default function BrandDeals() {
           >+ New Deal</button>
         </div>
 
-        {deals.length === 0 ? (
+        {deals.length === 0 && !seedsReady ? (
+          // Genuinely unknown yet — local storage was empty on mount but the /seeds.json
+          // reconciliation (which may add deals) hasn't finished. Showing "no deals" here would
+          // be a false negative that self-corrects a moment later with no visible cause, which
+          // reads exactly like a bug. Say nothing definitive until we actually know.
+          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
+            <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>✦</div>
+          </div>
+        ) : deals.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
             <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No brand deals yet</p>

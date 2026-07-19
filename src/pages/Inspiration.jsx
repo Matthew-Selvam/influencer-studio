@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useInspirationBoards, generateId } from '../store'
+import { useInspirationBoards, useSeedsReady, generateId } from '../store'
 import { compressImage } from '../utils/imageUtils'
 import Lightbox from '../components/Lightbox'
 
@@ -184,6 +184,7 @@ function BoardDetail({ board, onBack, onUpdate }) {
 
 export default function Inspiration() {
   const [boards, setBoards] = useInspirationBoards()
+  const seedsReady = useSeedsReady()
   const [selectedId, setSelectedId] = useState(null)
 
   function createBoard() {
@@ -225,7 +226,11 @@ export default function Inspiration() {
             >+ New Board</button>
           </div>
 
-          {boards.length === 0 ? (
+          {boards.length === 0 && !seedsReady ? (
+            <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
+              <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>✦</div>
+            </div>
+          ) : boards.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>✦</div>
               <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No boards yet</p>
