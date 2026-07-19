@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { startHiggsfieldOAuthPopup, disconnectHF, isHFConnected } from '../utils/higgsfieldAuth'
+import { getWaveSpeedKey, setWaveSpeedKey } from '../utils/wavespeedGenerate'
 import { useTheme } from '../context/theme'
 
 function Section({ title, children }) {
@@ -24,6 +25,9 @@ export default function Settings() {
   const [claudeKey, setClaudeKey] = useState(() => localStorage.getItem(CLAUDE_KEY) || '')
   const [claudeInput, setClaudeInput] = useState('')
   const [showClaudeInput, setShowClaudeInput] = useState(false)
+  const [wsKey, setWsKey] = useState(getWaveSpeedKey)
+  const [wsInput, setWsInput] = useState('')
+  const [showWsInput, setShowWsInput] = useState(false)
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('connected') === '1') {
@@ -178,6 +182,68 @@ export default function Settings() {
           ) : (
             <button
               onClick={() => setShowClaudeInput(true)}
+              style={{ padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, background: '#1D1D1F', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              Add API Key
+            </button>
+          )}
+        </Section>
+
+        <Section title="WaveSpeed">
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
+            Add your WaveSpeed API key to train a custom LoRA from an influencer's photos — a second,
+            identity-preserving generation path alongside Higgsfield. Uses your own WaveSpeed credits.
+          </p>
+          {wsKey ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34C759' }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#34C759' }}>WaveSpeed connected</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>···{wsKey.slice(-4)}</span>
+              </div>
+              <button
+                onClick={() => { setWaveSpeedKey(''); setWsKey(''); setWsInput(''); setShowWsInput(false) }}
+                style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, color: '#FF3B30', background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.18)', fontWeight: 500 }}
+              >
+                Remove
+              </button>
+            </div>
+          ) : showWsInput ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                autoFocus
+                type="password"
+                value={wsInput}
+                onChange={e => setWsInput(e.target.value)}
+                placeholder="ws-..."
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && wsInput.trim()) {
+                    const k = wsInput.trim()
+                    setWaveSpeedKey(k)
+                    setWsKey(k)
+                    setWsInput('')
+                    setShowWsInput(false)
+                  }
+                }}
+                style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--bg)', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'monospace' }}
+              />
+              <button
+                onClick={() => {
+                  const k = wsInput.trim()
+                  if (!k) return
+                  setWaveSpeedKey(k)
+                  setWsKey(k)
+                  setWsInput('')
+                  setShowWsInput(false)
+                }}
+                style={{ padding: '10px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, background: '#1D1D1F', color: '#fff', border: 'none', cursor: 'pointer' }}
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowWsInput(true)}
               style={{ padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, background: '#1D1D1F', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
               Add API Key

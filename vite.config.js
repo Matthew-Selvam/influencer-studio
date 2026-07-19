@@ -109,6 +109,13 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api\/hf/, ''),
       },
+      // Local dev mirror of api/wsproxy.js for Vercel production — a plain path-rewrite +
+      // Authorization-header forward is all WaveSpeed's REST API needs, no custom middleware.
+      '/api/ws': {
+        target: 'https://api.wavespeed.ai/api/v3',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/ws/, ''),
+      },
     },
   },
 })
