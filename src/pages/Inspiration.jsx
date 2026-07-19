@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useInspirationBoards, useSeedsReady, generateId } from '../store'
+import { useInspirationBoards, useSeedsReady, markSeedDeleted, generateId } from '../store'
 import { compressImage } from '../utils/imageUtils'
 import Lightbox from '../components/Lightbox'
 
@@ -198,6 +198,7 @@ export default function Inspiration() {
 
   function deleteBoard(id) {
     setBoards(prev => prev.filter(b => b.id !== id))
+    markSeedDeleted(id)
     if (selectedId === id) setSelectedId(null)
   }
 

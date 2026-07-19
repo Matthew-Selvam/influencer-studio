@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useBrandDeals, useSeedsReady, generateId } from '../store'
+import { useBrandDeals, useSeedsReady, markSeedDeleted, generateId } from '../store'
 import { compressImage, downloadImage } from '../utils/imageUtils'
 import { generateSingleImage } from '../utils/higgsfieldGenerate'
 import { isHFConnected } from '../utils/higgsfieldAuth'
@@ -307,6 +307,7 @@ export default function BrandDeals() {
     if (!deal) return
     if (!window.confirm(`Delete "${deal.brand}"?`)) return
     setDeals(prev => prev.filter(d => d.id !== id))
+    markSeedDeleted(id)
   }
 
   function renameDeal(id, brand) {

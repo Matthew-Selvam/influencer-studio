@@ -114,6 +114,26 @@ function useInfluencerStore(initial) {
   return [influencers, setInfluencers]
 }
 
+// ── Tombstones for deleted seed items ──────────────────────────────
+// The /seeds.json reconciliation below treats "this ID isn't in localStorage" as "this browser
+// has never seen it, add it" — which is right for a first visit but wrong after a user deletes a
+// seeded item, since deleting IS removing it from localStorage. Without a record of intentional
+// deletions, every full page load re-adds anything the user just removed. This set is that record.
+const DELETED_SEED_IDS_KEY = 'deleted_seed_ids'
+
+function readDeletedSeedIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(DELETED_SEED_IDS_KEY) || '[]')) } catch { return new Set() }
+}
+
+/** Call when the user deletes an item that might be seed data (brand deal, inspiration board, ...). */
+export function markSeedDeleted(id) {
+  try {
+    const ids = readDeletedSeedIds()
+    ids.add(id)
+    localStorage.setItem(DELETED_SEED_IDS_KEY, JSON.stringify([...ids]))
+  } catch {}
+}
+
 // ── Shared contexts — one source of truth across all pages ──
 const InfluencersCtx = createContext(null)
 const InspirationCtx = createContext(null)
@@ -493,10 +513,12 @@ export function StoreProvider({ children }) {
           }
         }
 
+        const deletedSeedIds = readDeletedSeedIds()
+
         // Always merge inspiration boards via React state setter — no reload needed
         const existingBoards = JSON.parse(localStorage.getItem('inspiration_boards') || '[]')
         const existingBoardIds = new Set(existingBoards.map(b => b.id))
-        const newBoards = (seeds.inspiration_boards || []).filter(b => b.id && !existingBoardIds.has(b.id))
+        const newBoards = (seeds.inspiration_boards || []).filter(b => b.id && !existingBoardIds.has(b.id) && !deletedSeedIds.has(b.id))
         if (newBoards.length) {
           setInspirationBoards(prev => {
             const prevIds = new Set(prev.map(b => b.id))
@@ -508,7 +530,7 @@ export function StoreProvider({ children }) {
         // Always merge global brand deals via React state setter — no reload needed
         const existingDeals = JSON.parse(localStorage.getItem('brand_deals') || '[]')
         const existingDealMap = new Map(existingDeals.map(d => [d.id, d]))
-        const newDeals = (seeds.brand_deals || []).filter(d => d.id && !existingDealMap.has(d.id))
+        const newDeals = (seeds.brand_deals || []).filter(d => d.id && !existingDealMap.has(d.id) && !deletedSeedIds.has(d.id))
         const patchedDeals = existingDeals.map(d => {
           const seed = (seeds.brand_deals || []).find(s => s.id === d.id)
           if (!seed) return d
