@@ -35,8 +35,17 @@ per-origin), so keeping both domains live defeats the point. Pick
 | Branch | Commits | State |
 |---|---|---|
 | `main` | — | in sync with origin, production |
-| `redesign/stitch-revamp` | 2 | **pushed**, preview deployed |
-| `feat/hermes3-sampling` | 3 | **local only, never pushed** |
+| `redesign/stitch-revamp` | 2 | pushed @ `b25785a`, preview READY |
+| `feat/hermes3-sampling` | 4 | pushed @ `6ffc336`, preview READY |
+
+Both previews (verified 2026-08-28, HTTP 200 behind Vercel SSO):
+
+- Workspace merge: https://ai-influencer-git-redesign-stit-e94ff4-matthew-selvams-projects.vercel.app
+- Hermes 3 / sampling: https://ai-influencer-git-feat-hermes3-1f5447-matthew-selvams-projects.vercel.app
+
+Note the `feat/hermes3-sampling` preview builds and serves, but its LLM changes
+are inert there — Vercel has no Ollama reachable. It only proves the build isn't
+broken. The 837ms/1150ms/1375ms figures below are local, against local Ollama.
 
 ### `redesign/stitch-revamp` — Workspace merge
 - `src/pages/Workspace.jsx` (new) hosts Influencers + FanFlow as tabs; URL drives
@@ -78,15 +87,13 @@ buried at the end) now honored unprompted — direct evidence the num_ctx fix la
 ## Next steps, in order
 
 1. Review the preview URL; merge `redesign/stitch-revamp` → `main` if good.
-2. Push `feat/hermes3-sampling` (never pushed). Note: Vercel has no Ollama, so
-   the LLM changes only take effect against a reachable backend — see below.
-3. **Phase 7 (highest value):** FanFlow memory does not survive on Vercel at all.
+2. **Phase 7 (highest value):** FanFlow memory does not survive on Vercel at all.
    `memoryBackend` defaults to `'file'`, writing to a read-only deployment dir;
    `writeStore()` catches and logs `[fanflow] memory persist failed`. Every cold
-   start drops all fan memory. `config.js:27` already says "Swappable for pgvector
+   start drops all fan memory. `config.js:62` already says "Swappable for pgvector
    later." Put Postgres + pgvector on the old HP as an always-on box, expose via
    Cloudflare Tunnel (HTTPS — an HTTPS page can't call `http://localhost`).
-4. Then Phase 5 (real LLM auto-summary — current "episodic summary" is a 600-char
+3. Then Phase 5 (real LLM auto-summary — current "episodic summary" is a 600-char
    transcript concat, no LLM), Phase 4 (lorebooks), Phase 6 (TTS — Piper, not
    Chatterbox on the HP; no CUDA/ROCm path on 2018 AMD integrated).
 
