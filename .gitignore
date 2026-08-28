@@ -1,5 +1,11 @@
 node_modules
+
+# FanFlow runtime data
+fanflow/data/
 dist
 .DS_Store
 *.local
 .claude/
+.vercel
+graphify-out/
+src/graphify-out/

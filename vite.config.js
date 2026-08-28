@@ -116,6 +116,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api\/ws/, ''),
       },
+      // Local dev mirror of api/fanflow.js for Vercel production — FanFlow's own
+      // server runs on :8787, and the same-origin /api/fanflow path the web app
+      // uses gets proxied here in dev (identical to the vercel.json rewrite).
+      '/api/fanflow': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/fanflow/, ''),
+      },
     },
   },
 })

@@ -1,0 +1,6 @@
+# Runtime data (fan memory store) — never commit
+data/
+# Local env overrides
+.env
+.env.*
+node_modules/

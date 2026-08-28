@@ -1,11 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTheme } from '../context/theme'
+import { SITE_MODE, IS_STUDIO, IS_FANFLOW, OTHER_SITE } from '../site'
 
-const links = [
-  { to: '/influencers', label: 'Influencers' },
-  { to: '/inspiration', label: 'Inspiration' },
-  { to: '/brand-deals', label: 'Brand Deals' },
-]
+const links = IS_STUDIO
+  ? [
+      { to: '/influencers', label: 'Influencers' },
+      { to: '/inspiration', label: 'Inspiration' },
+      { to: '/brand-deals', label: 'Brand Deals' },
+      { to: '/fanflow', label: 'FanFlow AI' },
+    ]
+  : [
+      { to: '/fanflow', label: 'Dashboard' },
+    ]
 
 export default function Nav() {
   const { pathname } = useLocation()
@@ -46,10 +52,10 @@ export default function Nav() {
       <NavLink to="/" style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
         <span style={{
           width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-          background: dark ? 'rgba(255,255,255,0.10)' : 'linear-gradient(135deg,#EC4899,#8B5CF6)',
+          background: IS_FANFLOW ? 'linear-gradient(135deg,#8B5CF6,#60A5FA)' : (dark ? 'rgba(255,255,255,0.10)' : 'linear-gradient(135deg,#EC4899,#8B5CF6)'),
           border: dark ? '1px solid rgba(255,255,255,0.12)' : 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: dark ? 'none' : '0 2px 8px rgba(139,92,246,0.35)',
+          boxShadow: IS_FANFLOW ? '0 2px 8px rgba(96,165,250,0.35)' : (dark ? 'none' : '0 2px 8px rgba(139,92,246,0.35)'),
           transition: 'background 0.5s',
         }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -61,7 +67,7 @@ export default function Nav() {
           fontWeight: 700, fontSize: 15, letterSpacing: '-0.4px',
           color: dark ? 'rgba(255,255,255,0.90)' : 'var(--text-primary)',
           transition: 'color 0.5s',
-        }}>Influencer Studio</span>
+        }}>{IS_STUDIO ? 'Influencer Studio' : 'FanFlow Console'}</span>
       </NavLink>
 
       {/* Nav links */}
@@ -87,14 +93,31 @@ export default function Nav() {
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-        <NavLink to="/create" style={({ isActive }) => ({
+        {/* Cross-site link */}
+        <a
+          href={OTHER_SITE.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: '6px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 600,
+            color: dark ? 'rgba(255,255,255,0.45)' : 'var(--text-secondary)',
+            textDecoration: 'none',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.8)' : 'var(--text-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.45)' : 'var(--text-secondary)' }}
+        >
+          {OTHER_SITE.label} ↗
+        </a>
+
+        {IS_STUDIO && <NavLink to="/create" style={({ isActive }) => ({
           padding: '7px 16px', borderRadius: 980,
           background: isActive ? (dark ? 'rgba(255,255,255,0.14)' : '#1D1D1F') : dark ? 'rgba(255,255,255,0.12)' : 'linear-gradient(135deg,#EC4899,#8B5CF6)',
           color: '#fff', fontSize: 13, fontWeight: 700,
           textDecoration: 'none', letterSpacing: '-0.1px',
           boxShadow: dark ? 'none' : '0 2px 8px rgba(139,92,246,0.3)',
           transition: 'all 0.15s',
-        })}>+ Create</NavLink>
+        })}>+ Create</NavLink>}
 
         <button
           onClick={e => toggle(e.clientX, e.clientY)}

@@ -4,13 +4,17 @@ import { Analytics } from '@vercel/analytics/react'
 import { ThemeProvider, useTheme } from './context/theme'
 import { StoreProvider } from './store'
 import { silentRefreshHFToken } from './utils/higgsfieldAuth'
+import { IS_STUDIO, IS_FANFLOW } from './site'
 import Nav from './components/Nav'
 import Landing from './pages/Landing'
+import FanFlowLanding from './pages/FanFlowLanding'
 import Influencers from './pages/Influencers'
 import Inspiration from './pages/Inspiration'
 import BrandDeals from './pages/BrandDeals'
+import CharacterHealth from './pages/CharacterHealth'
 import Create from './pages/Create'
 import Settings from './pages/Settings'
+import FanFlow from './pages/FanFlow'
 import AuthCallback from './pages/AuthCallback'
 
 const FEEDBACK_FORM_URL = 'https://forms.gle/p5cBXw4sYaHPdcANA'
@@ -52,6 +56,9 @@ function FeedbackButton() {
 
 export default function App() {
   useEffect(() => {
+    document.title = IS_STUDIO ? 'AI Influencer Studio' : 'FanFlow — AI Creator OS'
+  }, [])
+  useEffect(() => {
     silentRefreshHFToken()
     function onVisible() {
       if (document.visibilityState === 'visible') silentRefreshHFToken()
@@ -66,11 +73,22 @@ export default function App() {
     <BrowserRouter>
       <Nav />
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/influencers" element={<Influencers />} />
-        <Route path="/inspiration" element={<Inspiration />} />
-        <Route path="/brand-deals" element={<BrandDeals />} />
-        <Route path="/create" element={<Create />} />
+        <Route path="/" element={IS_STUDIO ? <Landing /> : <FanFlowLanding />} />
+        {IS_STUDIO && (
+          <>
+            <Route path="/influencers" element={<Influencers />} />
+            <Route path="/inspiration" element={<Inspiration />} />
+            <Route path="/brand-deals" element={<BrandDeals />} />
+            <Route path="/health" element={<CharacterHealth />} />
+            <Route path="/create" element={<Create />} />
+            <Route path="/fanflow" element={<FanFlow />} />
+          </>
+        )}
+        {IS_FANFLOW && (
+          <>
+            <Route path="/fanflow" element={<FanFlow />} />
+          </>
+        )}
         <Route path="/settings" element={<Settings />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />

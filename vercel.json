@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/hf/(.*)", "destination": "/api/hfproxy?__hfpath=$1" },
     { "source": "/api/ws/(.*)", "destination": "/api/wsproxy?__wspath=$1" },
+    { "source": "/api/fanflow/(.*)", "destination": "/api/fanflow?__ffpath=$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

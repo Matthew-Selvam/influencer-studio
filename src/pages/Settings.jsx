@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { startHiggsfieldOAuthPopup, disconnectHF, isHFConnected } from '../utils/higgsfieldAuth'
 import { getWaveSpeedKey, setWaveSpeedKey } from '../utils/wavespeedGenerate'
+import { checkFanflow, getFanflowUrl, setFanflowUrl, getFanflowModel, setFanflowModel } from '../utils/fanflow'
 import { useTheme } from '../context/theme'
 
 function Section({ title, children }) {
@@ -28,6 +29,23 @@ export default function Settings() {
   const [wsKey, setWsKey] = useState(getWaveSpeedKey)
   const [wsInput, setWsInput] = useState('')
   const [showWsInput, setShowWsInput] = useState(false)
+  const [ffUrl, setFfUrl] = useState(getFanflowUrl)
+  const [ffSaved, setFfSaved] = useState(true)
+  const [ffStatus, setFfStatus] = useState(null)
+  const [ffError, setFfError] = useState(null)
+  const [ffChecking, setFfChecking] = useState(true)
+  const [ffModel, setFfModel] = useState(getFanflowModel)
+
+  useEffect(() => {
+    let alive = true
+    setFfChecking(true)
+    setFfError(null)
+    checkFanflow()
+      .then(s => { if (alive) setFfStatus(s) })
+      .catch(e => { if (alive) { setFfStatus(null); setFfError(e.message) } })
+      .finally(() => { if (alive) setFfChecking(false) })
+    return () => { alive = false }
+  }, [ffUrl])
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('connected') === '1') {
@@ -248,6 +266,70 @@ export default function Settings() {
             >
               Add API Key
             </button>
+          )}
+        </Section>
+
+        <Section title="FanFlow (AI Creator OS)">
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.6 }}>
+            FanFlow is the orchestration layer: LLM, memory, and the message → intent → memory → respond
+            workflow. It runs either as a Vercel serverless function (deployed, same-origin{' '}
+            <code style={{ fontSize: 12, background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 5 }}>/api/fanflow</code>)
+            or as a local server (<code style={{ fontSize: 12, background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 5 }}>node fanflow/src/server.js</code>).
+            Media generation stays in your browser (Character Studio).
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            <input
+              value={ffUrl}
+              onChange={e => { setFfUrl(e.target.value); setFfSaved(false) }}
+              placeholder="same-origin (/api/fanflow) · or http://localhost:8787"
+              style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--bg)', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'monospace' }}
+            />
+            <button
+              onClick={() => { setFanflowUrl(ffUrl); setFfSaved(true) }}
+              style={{ padding: '10px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, background: '#1D1D1F', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              {ffSaved ? 'Saved' : 'Save'}
+            </button>
+          </div>
+
+          {ffChecking ? (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Checking connection…</p>
+          ) : ffError ? (
+            <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(255,59,48,0.07)', border: '1px solid rgba(255,59,48,0.18)', fontSize: 13, color: '#FF3B30', lineHeight: 1.5 }}>
+              {ffError}
+            </div>
+          ) : ffStatus && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#34C759' }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#34C759' }}>FanFlow connected</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· {ffStatus.memory.fans} fan(s), {ffStatus.memory.messages} message(s)</span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                Provider: <b style={{ color: 'var(--text-primary)' }}>{ffStatus.provider?.label || 'Ollama (local)'}</b>
+                {' · '}<b style={{ color: ffStatus.ollama.reachable ? 'var(--text-primary)' : '#FF3B30' }}>{ffStatus.ollama.reachable ? 'reachable' : 'offline'}</b>
+                {' · '}default model: <b style={{ color: 'var(--text-primary)' }}>{ffStatus.model}</b>
+              </div>
+              {ffStatus.ollama.models?.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {ffStatus.ollama.models.map(m => (
+                      <span key={m} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 999, background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                  <select
+                    value={ffModel}
+                    onChange={e => { setFanflowModel(e.target.value); setFfModel(e.target.value) }}
+                    style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--bg)', fontSize: 13, color: 'var(--text-primary)', maxWidth: 320 }}
+                  >
+                    <option value="">Server default ({ffStatus.model})</option>
+                    {ffStatus.ollama.models.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
           )}
         </Section>
       </div>

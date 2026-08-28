@@ -1,0 +1,15 @@
+{
+  "name": "fanflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FanFlow — local-first AI Creator OS backend (LLM, memory, workflows, event bus, capability registry). Zero runtime dependencies.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "connector:telegram": "node src/connectors/telegram.js"
+  }
+}
