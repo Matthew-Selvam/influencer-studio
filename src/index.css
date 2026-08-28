@@ -26,6 +26,11 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
   --nav-h: 56px;
+  --tabs-h: 44px;
+  /* Top offset for full-viewport fixed page shells (Influencers' app pane).
+     Defaults to just the nav; the merged Workspace raises it to clear its
+     tab bar so the fixed shell doesn't slide underneath. */
+  --shell-top: var(--nav-h);
 }
 
 [data-theme="dark"] {

@@ -1203,7 +1203,7 @@ function ScriptsSection({ scripts=[], influencerPrompt='', onChange, initialExpa
         }
         return (
           <div ref={drawerRef} style={{
-            position:'fixed', top:'var(--nav-h)', right:0, bottom:0,
+            position:'fixed', top:'var(--shell-top)', right:0, bottom:0,
             width:drawerWidth, zIndex:400,
             display:'flex', flexDirection:'row',
             background:'var(--surface)',
@@ -5922,7 +5922,7 @@ export default function Influencers() {
   }
 
   return (
-    <div style={{display:'flex',position:'fixed',top:'var(--nav-h)',left:0,right:0,bottom:0,background:'var(--bg)'}}>
+    <div style={{display:'flex',position:'fixed',top:'var(--shell-top)',left:0,right:0,bottom:0,background:'var(--bg)'}}>
       {showNew&&<NewModal onClose={()=>setShowNew(false)} onSave={create}/>}
       {lightbox&&<Lightbox images={lightbox.images} startIndex={lightbox.index} onClose={()=>setLightbox(null)}/>}
       {ctxMenu&&(

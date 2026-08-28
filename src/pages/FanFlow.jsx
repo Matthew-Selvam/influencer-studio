@@ -17,7 +17,7 @@ const FAN_ID_KEY = 'fanflow_fan_id'
 const CHAR_ID_KEY = 'fanflow_character_id'
 // Panel height: fills the viewport on desktop, caps at 680px so wrapped
 // panels stay reachable (the page scrolls) on narrow windows.
-const PANEL_H = 'min(680px, calc(100vh - var(--nav-h) - 190px))'
+const PANEL_H = 'min(680px, calc(100vh - var(--shell-top) - 190px))'
 
 const INTENT_META = {
   media:    { label: 'Media request',   color: '#8B5CF6' },
@@ -624,8 +624,8 @@ export default function FanFlow() {
   }
 
   return (
-    <div style={{ paddingTop: 'var(--nav-h)', minHeight: '100vh', background: 'var(--bg)' }}>
-      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '22px 24px', minHeight: 'calc(100vh - var(--nav-h))', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ paddingTop: 'var(--shell-top)', minHeight: '100vh', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '22px 24px', minHeight: 'calc(100vh - var(--shell-top))', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)', flexShrink: 0 }}>

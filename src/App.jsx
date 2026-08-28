@@ -8,13 +8,12 @@ import { IS_STUDIO, IS_FANFLOW } from './site'
 import Nav from './components/Nav'
 import Landing from './pages/Landing'
 import FanFlowLanding from './pages/FanFlowLanding'
-import Influencers from './pages/Influencers'
+import Workspace from './pages/Workspace'
 import Inspiration from './pages/Inspiration'
 import BrandDeals from './pages/BrandDeals'
 import CharacterHealth from './pages/CharacterHealth'
 import Create from './pages/Create'
 import Settings from './pages/Settings'
-import FanFlow from './pages/FanFlow'
 import AuthCallback from './pages/AuthCallback'
 
 const FEEDBACK_FORM_URL = 'https://forms.gle/p5cBXw4sYaHPdcANA'
@@ -74,19 +73,20 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={IS_STUDIO ? <Landing /> : <FanFlowLanding />} />
+
+        {/* Influencers and FanFlow are one page with two tabs. Both paths
+            render the same Workspace; the path selects the active tab, so the
+            old deep links from both former deployments keep working. Available
+            in both site modes — the merge is the point. */}
+        <Route path="/influencers" element={<Workspace />} />
+        <Route path="/fanflow" element={<Workspace />} />
+
         {IS_STUDIO && (
           <>
-            <Route path="/influencers" element={<Influencers />} />
             <Route path="/inspiration" element={<Inspiration />} />
             <Route path="/brand-deals" element={<BrandDeals />} />
             <Route path="/health" element={<CharacterHealth />} />
             <Route path="/create" element={<Create />} />
-            <Route path="/fanflow" element={<FanFlow />} />
-          </>
-        )}
-        {IS_FANFLOW && (
-          <>
-            <Route path="/fanflow" element={<FanFlow />} />
           </>
         )}
         <Route path="/settings" element={<Settings />} />

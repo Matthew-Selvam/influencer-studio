@@ -1,16 +1,19 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTheme } from '../context/theme'
-import { SITE_MODE, IS_STUDIO, IS_FANFLOW, OTHER_SITE } from '../site'
+import { SITE_MODE, IS_STUDIO, IS_FANFLOW } from '../site'
 
+// Influencers and FanFlow now live on one Workspace page as two tabs, so a
+// single nav entry covers both; the tab bar handles the switch. The former
+// cross-deployment link (OTHER_SITE) is gone — there is no other site to
+// cross to for these two surfaces any more.
 const links = IS_STUDIO
   ? [
-      { to: '/influencers', label: 'Influencers' },
+      { to: '/influencers', label: 'Workspace', match: ['/influencers', '/fanflow'] },
       { to: '/inspiration', label: 'Inspiration' },
       { to: '/brand-deals', label: 'Brand Deals' },
-      { to: '/fanflow', label: 'FanFlow AI' },
     ]
   : [
-      { to: '/fanflow', label: 'Dashboard' },
+      { to: '/fanflow', label: 'Workspace', match: ['/influencers', '/fanflow'] },
     ]
 
 export default function Nav() {
@@ -73,19 +76,24 @@ export default function Nav() {
       {/* Nav links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {links.map(l => (
-          <NavLink key={l.to} to={l.to} className="nav-link" style={({ isActive }) => ({
-            padding: '6px 14px',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: isActive ? 600 : 500,
-            color: dark
-              ? (isActive ? 'rgba(255,255,255,0.93)' : 'rgba(255,255,255,0.45)')
-              : (isActive ? '#EC4899' : 'var(--text-secondary)'),
-            background: dark
-              ? (isActive ? 'rgba(255,255,255,0.08)' : 'transparent')
-              : (isActive ? 'rgba(236,72,153,0.08)' : 'transparent'),
-            transition: 'all 0.15s',
-          })}>
+          <NavLink key={l.to} to={l.to} className="nav-link" style={({ isActive }) => {
+            // A `match` list lets one entry stay lit across sibling routes —
+            // the Workspace tabs live at two paths but are one destination.
+            const on = l.match ? l.match.some(p => pathname.startsWith(p)) : isActive
+            return {
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: on ? 600 : 500,
+              color: dark
+                ? (on ? 'rgba(255,255,255,0.93)' : 'rgba(255,255,255,0.45)')
+                : (on ? '#EC4899' : 'var(--text-secondary)'),
+              background: dark
+                ? (on ? 'rgba(255,255,255,0.08)' : 'transparent')
+                : (on ? 'rgba(236,72,153,0.08)' : 'transparent'),
+              transition: 'all 0.15s',
+            }
+          }}>
             {l.label}
           </NavLink>
         ))}
@@ -93,23 +101,6 @@ export default function Nav() {
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-        {/* Cross-site link */}
-        <a
-          href={OTHER_SITE.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: '6px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 600,
-            color: dark ? 'rgba(255,255,255,0.45)' : 'var(--text-secondary)',
-            textDecoration: 'none',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.8)' : 'var(--text-primary)' }}
-          onMouseLeave={e => { e.currentTarget.style.color = dark ? 'rgba(255,255,255,0.45)' : 'var(--text-secondary)' }}
-        >
-          {OTHER_SITE.label} ↗
-        </a>
-
         {IS_STUDIO && <NavLink to="/create" style={({ isActive }) => ({
           padding: '7px 16px', borderRadius: 980,
           background: isActive ? (dark ? 'rgba(255,255,255,0.14)' : '#1D1D1F') : dark ? 'rgba(255,255,255,0.12)' : 'linear-gradient(135deg,#EC4899,#8B5CF6)',
