@@ -12,6 +12,7 @@ import { classifyIntent } from './intent.js'
 import { analyzeEmotion } from './emotion.js'
 import { buildPersonaSystemPrompt, buildMemoryContext, buildExampleTurns } from './persona.js'
 import { llmChat, ModelMissingError } from './llm.js'
+import { enforceDisclosure } from './disclosure.js'
 import { mediaRequest } from './mediaBridge.js'
 import * as memory from './memory.js'
 
@@ -70,6 +71,7 @@ export async function handleMessage({
   if (memoryContext) steps.push('memory:context')
   if (exampleTurns.length) steps.push(`persona:examples(${exampleTurns.length / 2})`)
   let reply
+  let modelMissing = false
   try {
     reply = await llmChat({ messages, model })
     steps.push('llm:generate')
@@ -78,8 +80,27 @@ export async function handleMessage({
       emit('ModelMissing', { fanId, model: e.model })
       reply = `(Model "${e.model}" isn't ready on this provider — ${e.hint} then send this again.)`
       steps.push(`llm:model-missing (${e.model})`)
+      modelMissing = true
     } else {
       throw e
+    }
+  }
+
+  // 3b. Disclosure backstop. The persona prompt forbids claiming to be human,
+  // but that is a sampled control and was measured denying anyway (see
+  // disclosure.js). Verify the actual output; retry once, then substitute.
+  // Skipped when the reply is our own model-missing notice, not model output.
+  if (!modelMissing) {
+    const guard = await enforceDisclosure({
+      reply,
+      messages,
+      name: persona?.name || null,
+      regenerate: ({ messages: m }) => llmChat({ messages: m, model }),
+    })
+    if (guard.repaired) {
+      emit('DisclosureRepaired', { fanId, method: guard.repaired, original: reply })
+      steps.push(`disclosure:repaired(${guard.repaired})`)
+      reply = guard.reply
     }
   }
   emit('ResponseGenerated', { fanId, reply })

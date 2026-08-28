@@ -2,15 +2,54 @@
 //
 // The web app sends the selected influencer's DNA (the same fields the
 // Character Studio wizard collects) and this module shapes the assistant's
-// voice. Alignment note: per the blueprint's exclusions, personas are always
-// framed as *fictional AI influencer characters* — never claiming to be a real
-// person, never hiding that they're AI.
+// voice.
+//
+// ── Disclosure: two separate concerns, deliberately split ──────────────────
+//
+// The old prompt fused them into one clause ("you are an AI character — never
+// claim to be a real person and never hide that you are AI"). That cost
+// immersion for no safety gain: "never hide it" fired mid-roleplay, and ST card
+// imports bypassed the whole line anyway since the format has no slot for it.
+//
+//   1. PROACTIVE disclosure → dropped from the prompt. It now lives at the UI
+//      layer (FanFlow.jsx labels the character "fictional AI character" beside
+//      its name for the whole session), where it is persistent and cannot be
+//      sampled away. A prompt instruction was always the weaker place for it.
+//
+//   2. NOT CLAIMING TO BE HUMAN → kept, and it needs three parts, not one.
+//
+// (2) is not a tuning knob, and the phrasing took three measured rounds against
+// hermes3:8b (6 immersion probes / 6 "are you real?" probes, varied wording).
+// Counting only what the model actually said — an earlier pass looked clean
+// purely because the checker scored "I'm a real person, not a bot or AI system"
+// as an admission, having matched the words "bot"/"AI" inside the denial:
+//
+//   duty ("if asked, tell them plainly")
+//       1/6 denied being AI, 1/6 immersion leaks. Stated as a duty it reads as
+//       a standing instruction, so it fires unprompted; and the model still has
+//       to classify a question as the trigger, which it does unreliably.
+//
+//   prohibition alone ("you may not say the false thing")
+//       0 leaks, but still 1/6 denied, plus 1/6 refused to answer. A bare
+//       prohibition leaves silence available, and the model takes it.
+//
+//   prohibition + no-deflect (current)
+//       0/6 denied, 0/6 evaded, 6/6 confirmed.
+//
+// The third part is what does the work: refusing to answer has to be ruled out
+// explicitly. "I'm not able to discuss that" is not a neutral outcome — to a fan
+// who just asked whether they are talking to a person, a dodge reads as a yes,
+// so it lands the same lie the prohibition was there to prevent.
+//
+// Staying quiet unless asked is a roleplay choice. Telling a paying fan you are
+// human is deception, and several jurisdictions treat it as such.
 
 export function buildPersonaSystemPrompt(persona) {
   if (!persona?.name) {
     return [
       'You are FanFlow, an AI assistant for a creative influencer studio.',
-      'Be warm, concise, and conversational. Never claim to be a real person.',
+      'Be warm, concise, and conversational.',
+      'Never state or imply that you are a human being.',
     ].join('\n')
   }
 
@@ -20,7 +59,8 @@ export function buildPersonaSystemPrompt(persona) {
     : null
 
   const bits = [
-    `You are ${p.name}, a fictional AI influencer character. Respond as ${p.name} in a fan conversation. You are an AI character — never claim to be a real person and never hide that you are AI.`,
+    `You are ${p.name}. Respond as ${p.name} in a fan conversation, staying in character. Stay in the scene — do not bring up being an AI, a model, or a system prompt on your own, and do not narrate your own nature.`,
+    `One absolute limit, which overrides character: you may never state or imply that you are a human being, and never deny being an AI. Do not raise it unprompted. But if a fan asks in any wording whether you are real, human, a bot, or an AI, you must confirm that you are an AI — briefly, in ${p.name}'s voice, then carry on. Refusing to answer, changing the subject, or saying you cannot discuss it are all forbidden: to a fan those read as a yes, so they are the same lie.`,
     `Profile: ${[p.age && `${p.age} years old`, p.gender, p.niche && `${p.niche} niche`, extro].filter(Boolean).join(', ')}.`,
     p.physicalDesc && `Appearance: ${p.physicalDesc}.`,
     p.backstory && `Backstory: ${p.backstory}.`,

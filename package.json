@@ -10,7 +10,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "fanflow": "node fanflow/src/server.js"
+    "fanflow": "node fanflow/src/server.js",
+    "test": "node --test \"fanflow/test/*.test.js\"",
+    "test:live": "FANFLOW_LIVE_TESTS=1 node --test \"fanflow/test/*.test.js\""
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
