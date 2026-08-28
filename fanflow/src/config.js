@@ -15,8 +15,43 @@ export const config = {
 
   // Ollama settings (used when llmProvider === 'ollama')
   ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
-  // Llama 3 8B is the blueprint's model. Change with: FANFLOW_MODEL=llama3.2 node fanflow/src/server.js
-  model: process.env.FANFLOW_MODEL || 'llama3',
+  // Hermes 3 8B (Llama 3.1 fine-tune, ChatML-templated) holds a character
+  // voice far better than base Llama 3 in fan roleplay.
+  // Change with: FANFLOW_MODEL=llama3 node fanflow/src/server.js
+  model: process.env.FANFLOW_MODEL || 'hermes3:8b',
+
+  // ── Sampling ────────────────────────────────────────────────────────────
+  // min_p is the main quality lever: it prunes the tail relative to the top
+  // token's probability, so a higher temperature stays coherent rather than
+  // drifting. Tuned for character consistency at conversational latency.
+  //
+  // NOTE: SillyTavern's `smoothing_factor` (quadratic sampling) has NO Ollama
+  // equivalent — it is a koboldcpp/llama.cpp sampler, and Ollama silently
+  // ignores unknown option keys rather than erroring. min_p covers most of the
+  // same ground. If smoothing ever becomes a hard requirement that means
+  // moving to koboldcpp behind the `custom` provider, not adding a key here.
+  temperature: Number(process.env.FANFLOW_TEMPERATURE ?? 0.9),
+  minP: Number(process.env.FANFLOW_MIN_P ?? 0.07),
+  repeatPenalty: Number(process.env.FANFLOW_REPEAT_PENALTY ?? 1.04),
+  maxTokens: Number(process.env.FANFLOW_MAX_TOKENS ?? 350),
+
+  // Context window. When unset, Ollama applies its own default (2048 on many
+  // builds) and truncates the prompt FROM THE LEFT — silently eating the
+  // system prompt that the provider's trimmer goes out of its way to preserve.
+  // Must stay comfortably above maxPromptChars/4 (~3k tokens).
+  numCtx: Number(process.env.FANFLOW_NUM_CTX ?? 8192),
+
+  // Stop sequences. Hermes 3 is ChatML-templated; without these it can emit
+  // its own turn markers or carry on writing the fan's next line.
+  stopSequences: process.env.FANFLOW_STOP
+    ? process.env.FANFLOW_STOP.split('|')
+    : ['<|im_end|>', '<|im_start|>', '\nfan:', '\nFan:'],
+
+  // How long Ollama keeps the model resident after a request. Ollama's own
+  // default is 5m, so a quiet gap costs the next fan a ~9s cold load against
+  // a ~1.5s warm reply — the difference between "texting" and "waiting".
+  // '-1' pins it in memory indefinitely; use '5m' to reclaim RAM when idle.
+  keepAlive: process.env.FANFLOW_KEEP_ALIVE || '30m',
 
   // Custom-provider settings (used when llmProvider === 'custom')
   customUrl: process.env.FANFLOW_CUSTOM_URL || 'http://localhost:8000/v1',
@@ -36,8 +71,8 @@ export const config = {
   embedModel: process.env.FANFLOW_EMBED_MODEL || 'nomic-embed-text',
 
   // Limits — crude token budgeting so a long history never blows the context window
-  maxShortTerm: 20,       // short-term messages kept per fan
-  maxPromptChars: 12000,  // total prompt character budget for the LLM
-  maxMemoryHits: 6,       // memory items injected into the prompt
-  eventLogCap: 200,       // rolling event-bus log size
+  maxShortTerm: Number(process.env.FANFLOW_MAX_SHORT_TERM ?? 20),      // short-term messages kept per fan
+  maxPromptChars: Number(process.env.FANFLOW_MAX_PROMPT_CHARS ?? 12000), // total prompt character budget for the LLM
+  maxMemoryHits: Number(process.env.FANFLOW_MAX_MEMORY_HITS ?? 6),     // memory items injected into the prompt
+  eventLogCap: Number(process.env.FANFLOW_EVENT_LOG_CAP ?? 200),       // rolling event-bus log size
 }
