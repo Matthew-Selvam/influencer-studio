@@ -10,6 +10,21 @@
 
 const URL_KEY = 'fanflow_url'
 const MODEL_KEY = 'fanflow_model'
+const MODEL_MIGRATION_KEY = 'fanflow_model_migrated_v2'
+
+// One-time migration: the per-browser model override is sent as `body.model`
+// and WINS over the server default. Anyone who picked "llama3" in Settings
+// before the Hermes 3 switch would keep pinning llama3 forever, silently
+// undoing the new default and its sampling tune — with the UI still showing
+// the server's model in the status pill. Clear the stale pin once so those
+// browsers fall back to the server default; an explicit re-pick still sticks.
+try {
+  if (!localStorage.getItem(MODEL_MIGRATION_KEY)) {
+    const pinned = localStorage.getItem(MODEL_KEY)
+    if (pinned && pinned.startsWith('llama3')) localStorage.removeItem(MODEL_KEY)
+    localStorage.setItem(MODEL_MIGRATION_KEY, '1')
+  }
+} catch { /* private mode / storage disabled — nothing to migrate */ }
 
 export function getFanflowUrl() {
   const v = localStorage.getItem(URL_KEY)

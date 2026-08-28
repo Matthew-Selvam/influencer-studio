@@ -56,7 +56,12 @@ export const customProvider = {
    * @param {number} [opts.maxTokens]
    * @returns {Promise<string>} the assistant reply
    */
-  async chat({ messages, model, temperature = 0.7, maxTokens = 600 } = {}) {
+  async chat({
+    messages,
+    model,
+    temperature = config.temperature,
+    maxTokens = config.maxTokens,
+  } = {}) {
     const useModel = model || this.model
 
     // Crude token budget (same policy as Ollama provider).
@@ -78,7 +83,13 @@ export const customProvider = {
         messages: msgs,
         temperature,
         max_tokens: maxTokens,
+        stop: config.stopSequences,
         stream: false,
+        // Deliberately NOT sending min_p / repeat_penalty here. They are
+        // llama.cpp/koboldcpp/vLLM extensions, not part of the OpenAI schema,
+        // and strict endpoints (OpenAI itself) reject unknown keys with a 400.
+        // If this provider is pointed at koboldcpp to get the full sampler set,
+        // add them there behind an explicit opt-in flag.
       }),
       signal: AbortSignal.timeout(180000),
     })
