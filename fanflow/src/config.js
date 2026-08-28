@@ -47,6 +47,12 @@ export const config = {
     ? process.env.FANFLOW_STOP.split('|')
     : ['<|im_end|>', '<|im_start|>', '\nfan:', '\nFan:'],
 
+  // How long Ollama keeps the model resident after a request. Ollama's own
+  // default is 5m, so a quiet gap costs the next fan a ~9s cold load against
+  // a ~1.5s warm reply — the difference between "texting" and "waiting".
+  // '-1' pins it in memory indefinitely; use '5m' to reclaim RAM when idle.
+  keepAlive: process.env.FANFLOW_KEEP_ALIVE || '30m',
+
   // Custom-provider settings (used when llmProvider === 'custom')
   customUrl: process.env.FANFLOW_CUSTOM_URL || 'http://localhost:8000/v1',
   customModel: process.env.FANFLOW_CUSTOM_MODEL || 'custom-model',

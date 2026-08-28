@@ -47,12 +47,15 @@ export const ollamaProvider = {
    * @param {number} [opts.maxTokens]
    * @returns {Promise<string>} the assistant reply
    */
-  async chat({
-    messages,
-    model = config.model,
-    temperature = config.temperature,
-    maxTokens = config.maxTokens,
-  } = {}) {
+  async chat({ messages, model, temperature, maxTokens } = {}) {
+    // Coalesce rather than using default parameters: handleMessage defaults
+    // `model` to null (workflow.js), and a default parameter only fires on
+    // undefined — a null would sail through and Ollama answers
+    // 400 "model is required". Same reasoning for the sampling values.
+    const useModel = model || config.model
+    const useTemp = temperature ?? config.temperature
+    const useMaxTokens = maxTokens ?? config.maxTokens
+
     // Crude token budget: trim the middle of the history until the prompt fits.
     // Keeps msgs[0] (the system prompt: persona + memory) and drops oldest turns.
     let msgs = messages
@@ -66,12 +69,14 @@ export const ollamaProvider = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model,
+        model: useModel,
         messages: msgs,
         stream: false,
+        // Top-level, not an `options` key — Ollama reads it off the request.
+        keep_alive: config.keepAlive,
         options: {
-          temperature,
-          num_predict: maxTokens,
+          temperature: useTemp,
+          num_predict: useMaxTokens,
           min_p: config.minP,
           repeat_penalty: config.repeatPenalty,
           // Without num_ctx, Ollama's small default silently truncates from the
@@ -86,7 +91,7 @@ export const ollamaProvider = {
 
     if (!res.ok) {
       const text = await res.text().catch(() => '')
-      if (res.status === 404 && /model/i.test(text)) throw new ModelMissingError(model, this.missingHint(model))
+      if (res.status === 404 && /model/i.test(text)) throw new ModelMissingError(useModel, this.missingHint(useModel))
       throw new Error(`Ollama error ${res.status}: ${text.slice(0, 300)}`)
     }
 
