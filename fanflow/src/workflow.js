@@ -10,7 +10,7 @@
 import { emit } from './eventBus.js'
 import { classifyIntent } from './intent.js'
 import { analyzeEmotion } from './emotion.js'
-import { buildPersonaSystemPrompt, buildMemoryContext } from './persona.js'
+import { buildPersonaSystemPrompt, buildMemoryContext, buildExampleTurns } from './persona.js'
 import { llmChat, ModelMissingError } from './llm.js'
 import { mediaRequest } from './mediaBridge.js'
 import * as memory from './memory.js'
@@ -51,16 +51,24 @@ export async function handleMessage({
   const fanRec = memory.fanMemory(fanId)
   const memoryContext = buildMemoryContext({ hits: memoryHits, relationship: fanRec?.relationship || null })
 
-  // 3. Generate — persona + memory context + the new message
+  // 3. Generate — persona + memory context + few-shot examples + the message.
+  // Example turns sit between the system prompt and the live history so the
+  // model sees the target voice demonstrated before the real conversation.
+  // The provider's trimmer drops from index 1 forward under context pressure,
+  // so examples are shed before recent turns are — the right trade, since
+  // losing the actual conversation is worse than losing the demonstration.
   const systemPrompt = [buildPersonaSystemPrompt(persona), memoryContext].filter(Boolean).join('\n\n')
+  const exampleTurns = buildExampleTurns(persona)
   const messages = [
     { role: 'system', content: systemPrompt },
+    ...exampleTurns,
     ...recent.map(m => ({ role: m.role, content: m.text })),
     { role: 'user', content: text },
   ]
 
   const steps = []
   if (memoryContext) steps.push('memory:context')
+  if (exampleTurns.length) steps.push(`persona:examples(${exampleTurns.length / 2})`)
   let reply
   try {
     reply = await llmChat({ messages, model })

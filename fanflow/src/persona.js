@@ -34,6 +34,64 @@ export function buildPersonaSystemPrompt(persona) {
 }
 
 /**
+ * Example dialogues → few-shot chat turns.
+ *
+ * Voice instructions ("be casual", "keep it short") are weak levers; showing
+ * the model two or three real exchanges is a far stronger one. These are
+ * returned as actual alternating turns rather than prose inside the system
+ * prompt, because models imitate the shape of the conversation they are shown
+ * much more reliably than they follow a description of it.
+ *
+ * Accepts either shape:
+ *   1. structured  — [{ user: '...', assistant: '...' }, ...]
+ *   2. SillyTavern — a raw `mes_example` string using <START> blocks and
+ *      {{user}}/{{char}} macros, so cards exported from ST drop straight in.
+ *
+ * @param {object} persona
+ * @param {number} [limit] max pairs to emit (each pair costs ~2 turns of context)
+ * @returns {Array<{role:string,content:string}>} flat turn list, [] when none
+ */
+export function buildExampleTurns(persona, limit = 5) {
+  const raw = persona?.exampleDialogues ?? persona?.mes_example
+  if (!raw) return []
+
+  let pairs = []
+
+  if (Array.isArray(raw)) {
+    pairs = raw
+      .map(d => ({ user: (d?.user || '').trim(), assistant: (d?.assistant || '').trim() }))
+      .filter(d => d.user && d.assistant)
+  } else if (typeof raw === 'string') {
+    const charName = persona?.name || 'char'
+    // ST separates examples with <START>; within a block, lines are
+    // "{{user}}: ..." / "{{char}}: ...". Macros may already be substituted
+    // with real names, so match either form.
+    for (const block of raw.split(/<START>/i)) {
+      if (!block.trim()) continue
+      let user = null
+      let assistant = null
+      for (const line of block.split('\n')) {
+        const m = line.match(/^\s*(?:\{\{(user|char)\}\}|([^:]{1,40})):\s*(.+)$/)
+        if (!m) continue
+        const body = m[3].trim()
+        const macro = m[1]
+        const name = (m[2] || '').trim()
+        const isChar = macro === 'char' || name.toLowerCase() === charName.toLowerCase()
+        const isUser = macro === 'user' || /^(you|user|fan|anon)$/i.test(name)
+        if (isChar && assistant == null) assistant = body
+        else if (isUser && user == null) user = body
+      }
+      if (user && assistant) pairs.push({ user, assistant })
+    }
+  }
+
+  return pairs.slice(0, limit).flatMap(d => [
+    { role: 'user', content: d.user },
+    { role: 'assistant', content: d.assistant },
+  ])
+}
+
+/**
  * Memory context block — the retrieval half of RAG. searchMemory finds the
  * facts; this turns them into prompt the LLM can actually use, plus a one-line
  * relationship summary so warmth scales with trust/stage.

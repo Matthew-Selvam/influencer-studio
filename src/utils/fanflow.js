@@ -97,5 +97,11 @@ export function personaFromInfluencer(inf) {
     voice: inf.voice,
     introExtrovert: inf.introExtrovert,
     contentPillars: inf.contentPillars || [],
+    // Few-shot voice examples. Accepts a structured array
+    // ([{ user, assistant }]) or a raw SillyTavern `mes_example` string, so a
+    // card authored and tuned in ST can be pasted in unchanged. The backend
+    // (persona.js buildExampleTurns) parses both and injects them as real
+    // chat turns — a far stronger voice lever than prose instructions.
+    exampleDialogues: inf.exampleDialogues || inf.mes_example || null,
   }
 }
